@@ -1,0 +1,53 @@
+ORIG_PN="libgda"
+inherit gnome2
+
+DESCRIPTION="GNOME Database Access libraries"
+HOMEPAGE="http://www.gnome-db.org/"
+
+PATCH_URI="
+	4.2.2-cygwin.patch
+	5.0.1-no-undefined.patch
+"
+
+PKG_NAMES="libgda5.0_4 libgda5.0-devel libgda-ui5.0_4 libgda-ui5.0-devel
+           gda-browser5.0 girepository-Gda5.0 girepository-Gdaui5.0 vala-libgda5.0"
+gda_browser5_0_CONTENTS="usr/bin/gda-browser* usr/share/applications/gda-browser*
+                         usr/share/gnome/help/gda-browser/ usr/share/gtk-doc/html/gda-browser/
+                         usr/share/libgda-5.0/pixmaps/gda-browser*
+                         usr/share/pixmaps/gda-browser-*"
+libgda5_0_4_CONTENTS="--exclude=*gda-ui* --exclude=demo --exclude=icons
+                      --exclude=pixmaps --exclude=ui --exclude=*.glade
+                      etc/ usr/bin/*-5.0-4.dll
+                      usr/bin/gda-list* usr/bin/gda-sql* usr/bin/gda-test*
+                      usr/lib/libgda-5.0/providers/
+                      usr/share/doc/ usr/share/libgda-5.0/
+                      usr/share/locale/ usr/share/man/"
+libgda5_0_devel_CONTENTS="--exclude=*gda-ui* usr/include/ usr/lib/libgda*-5.0.*
+                        usr/lib/pkgconfig/
+                        usr/share/gtk-doc/html/libgda-5.0/"
+libgda_ui5_0_4_CONTENTS="--exclude=gda-browser* usr/bin/cyggda-ui-5.0-4.dll
+                         usr/bin/gda-control-center-*
+                         usr/lib/libgda-5.0/plugins/ usr/share/applications/
+                         usr/share/icons/ usr/share/libgda-5.0/icons/
+                         usr/share/libgda-5.0/pixmaps/ usr/share/libgda-5.0/*.glade
+                         usr/share/libgda-5.0/ui/"
+libgda_ui5_0_devel_CONTENTS="usr/bin/gdaui-demo-*
+                             usr/include/libgda-5.0/libgda-ui/ usr/lib/libgda-ui-5.0.*
+                             usr/lib/pkgconfig/libgda-ui-5.0.pc
+                             usr/share/libgda-5.0/demo/"
+girepository_Gda5_0_CONTENTS="usr/*/gir*/Gda-5.0.*"
+girepository_Gdaui5_0_CONTENTS="usr/*/gir*/Gdaui-5.0.*"
+vala_libgda5_0_CONTENTS="usr/share/vala*/"
+
+DIFF_EXCLUDES="libgda.h libgda.types"
+
+CYGCONF_ARGS="
+	--disable-binreloc
+	--without-java
+	--with-bdb=/usr
+	--with-ldap=/usr
+	--with-mdb=/usr
+	--with-mysql=/usr
+	--without-oracle
+	--with-postgres=/usr
+"

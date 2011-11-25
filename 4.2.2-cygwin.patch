@@ -1,0 +1,63 @@
+--- origsrc/libgda-4.2.2/configure.ac	2010-11-21 08:44:43.000000000 -0600
++++ src/libgda-4.2.2/configure.ac	2010-12-23 21:53:23.292010800 -0600
+@@ -302,14 +302,16 @@ EXPORT_PROV_SYM_REGEX='-export-symbols-r
+ EXPORT_UI_SYM_REGEX='-export-symbols-regex "^(gdaui_).*"'
+ AC_MSG_CHECKING([for platform])
+ platform_win32=no
++platform_cygwin=no
+ platform_carbon=no
+ have_ige=no
+ linklibext=".so"
+ case "$host" in
+ *-cygwin*)
+     AC_MSG_RESULT([Win32 - cygwin])
++    platform_cygwin=yes
+     NO_UNDEFINED='-no-undefined'
+-    LIBTOOL_EXPORT_OPTIONS=$EXPORT_SYM_REGEX
++    LIBTOOL_EXPORT_OPTIONS=
+     LIBTOOL_PROV_EXPORT_OPTIONS=$EXPORT_PROV_SYM_REGEX
+     LIBTOOL_UI_EXPORT_OPTIONS=$EXPORT_UI_SYM_REGEX
+     linklibext=".dll.a"
+@@ -362,6 +364,7 @@ case "$host" in
+ esac
+ 
+ AM_CONDITIONAL(PLATFORM_WIN32, [test $platform_win32 = yes])
++AM_CONDITIONAL(PLATFORM_CYGWIN, [test $platform_win32 = yes])
+ AM_CONDITIONAL(PLATFORM_CARBON, [test $platform_carbon = yes])
+ AM_CONDITIONAL(HAVE_IGE, [test $have_ige = yes])
+ AC_SUBST(LIBTOOL_EXPORT_OPTIONS)
+@@ -569,7 +572,7 @@ dnl test for system-installed SQLite
+ dnl If no SQLite is found or if the SQLite found does not have the sqlite3_table_column_metadata()
+ dnl function call, then use the embedded version
+ dnl also, on Win32, always use the embedded version
+-if test x"$platform_win32" = "xyes"
++if test x"$platform_win32" = "xyes" -o x"$platform_cygwin" = "xyes"
+ then
+         AM_CONDITIONAL(HAVE_SQLITE, 0)
+ else
+--- origsrc/libgda-4.2.2/m4/bdb.m4	2010-11-10 12:08:10.000000000 -0600
++++ src/libgda-4.2.2/m4/bdb.m4	2010-12-22 23:39:08.539499300 -0600
+@@ -114,7 +114,7 @@ m4_define([_BDB_CHECK_INTERNAL],
+ 	do
+ 	    bdbdir=""
+ 	    AC_MSG_CHECKING([for Berkeley DB files in $d])
+-	    for version in "" 5.1 5.0 4.9 4.8 4.7
++	    for version in 5.2 5.1 5.0 4.9 4.8 4.7
+ 	    do
+ 	        if test $platform_win32 = yes
+ 		then
+@@ -129,7 +129,13 @@ m4_define([_BDB_CHECK_INTERNAL],
+ 		    db_libfile="$d/$bdb_loclibdir/libdb$bdb_libext"
+ 		    try_headers="db.h"
+     		else
+-		    if test $platform_win32 = yes
++		    if test $platform_cygwin = yes
++		    then
++		        db_libfilename="cygdb-$version.dll"
++        	        db_lib="-ldb-$version"
++		        db_libfile="$d/lib/libdb-$version.dll.a"
++        	        try_headers="db$version/db.h db$sversion/db.h"
++		    elif test $platform_win32 = yes
+ 		    then
+ 		        db_libfilename="libdb$sversion$bdb_libext"
+         	        db_lib="-ldb$sversion"
