@@ -10,9 +10,9 @@ PATCH_URI="
 "
 
 PKG_NAMES="libgda5.0_4 libgda5.0-devel libgda-ui5.0_4 libgda-ui5.0-devel
-           gda-browser5.0 girepository-Gda5.0 girepository-Gdaui5.0 vala-libgda5.0"
+           gda-browser5.0 girepository-Gda5.0 girepository-Gdaui5.0" # vala-libgda5.0"
 gda_browser5_0_CONTENTS="usr/bin/gda-browser* usr/share/applications/gda-browser*
-                         usr/share/gnome/help/gda-browser/ usr/share/gtk-doc/html/gda-browser/
+                         usr/share/gnome/help/ usr/share/gtk-doc/html/gda-browser/
                          usr/share/libgda-5.0/pixmaps/gda-browser*
                          usr/share/pixmaps/gda-browser-*"
 libgda5_0_4_CONTENTS="--exclude=*gda-ui* --exclude=demo --exclude=icons
@@ -43,6 +43,7 @@ DIFF_EXCLUDES="libgda.h libgda.types"
 
 CYGCONF_ARGS="
 	--disable-binreloc
+	--disable-vala
 	--without-java
 	--with-bdb=/usr
 	--with-ldap=/usr
