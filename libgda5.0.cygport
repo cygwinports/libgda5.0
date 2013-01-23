@@ -1,20 +1,32 @@
 ORIG_PN="libgda"
-inherit gnome2
+inherit gnome2 python
 
-DESCRIPTION="GNOME Database Access libraries"
+NAME="libgda5.0"
+VERSION=5.1.1
+RELEASE=1
+CATEGORY="Database GNOME"
+SUMMARY="GNOME Data Access libraries"
+DESCRIPTION="GNU Data Access (GDA) is an attempt to provide uniform access to
+different kinds of data sources (databases, information servers, mail spools,
+etc).  It is a complete architecture that provides all you need to access your
+data.  It is defined by a set of plugin APIs as generic as possible (but very
+powerful at the same time) so that any kind of data source can be accessed
+through them."
 HOMEPAGE="http://www.gnome-db.org/"
 
 PATCH_URI="
+	http://pkgs.fedoraproject.org/cgit/libgda.git/plain/libgda-5.1.1-introspection.patch?h=f18&id=11e640c
 	4.2.2-cygwin.patch
-	5.0.1-no-undefined.patch
 "
 
 PKG_NAMES="libgda5.0_4 libgda5.0-devel libgda-ui5.0_4 libgda-ui5.0-devel
            gda-browser5.0 girepository-Gda5.0 girepository-Gdaui5.0" # vala-libgda5.0"
+gda_browser5_0_SUMMARY="GNOME Data Access browser"
 gda_browser5_0_CONTENTS="usr/bin/gda-browser* usr/share/applications/gda-browser*
                          usr/share/gnome/help/ usr/share/gtk-doc/html/gda-browser/
                          usr/share/libgda-5.0/pixmaps/gda-browser*
                          usr/share/pixmaps/gda-browser-*"
+libgda5_0_4_SUMMARY="${SUMMARY} (runtime libs)"
 libgda5_0_4_CONTENTS="--exclude=*gda-ui* --exclude=demo --exclude=icons
                       --exclude=pixmaps --exclude=ui --exclude=*.glade
                       etc/ usr/bin/*-5.0-4.dll
@@ -22,27 +34,35 @@ libgda5_0_4_CONTENTS="--exclude=*gda-ui* --exclude=demo --exclude=icons
                       usr/lib/libgda-5.0/providers/
                       usr/share/doc/ usr/share/libgda-5.0/
                       usr/share/locale/ usr/share/man/"
+libgda5_0_devel_SUMMARY="${SUMMARY} (development files)"
 libgda5_0_devel_CONTENTS="--exclude=*gda-ui* usr/include/ usr/lib/libgda*-5.0.*
                         usr/lib/pkgconfig/
                         usr/share/gtk-doc/html/libgda-5.0/"
+libgda_ui5_0_4_SUMMARY="GNOME Data Access UI library (runtime)"
 libgda_ui5_0_4_CONTENTS="--exclude=gda-browser* usr/bin/cyggda-ui-5.0-4.dll
                          usr/bin/gda-control-center-*
                          usr/lib/libgda-5.0/plugins/ usr/share/applications/
                          usr/share/icons/ usr/share/libgda-5.0/icons/
                          usr/share/libgda-5.0/pixmaps/ usr/share/libgda-5.0/*.glade
                          usr/share/libgda-5.0/ui/"
+libgda_ui5_0_devel_SUMMARY="GNOME Data Access UI library (development)"
 libgda_ui5_0_devel_CONTENTS="usr/bin/gdaui-demo-*
                              usr/include/libgda-5.0/libgda-ui/ usr/lib/libgda-ui-5.0.*
                              usr/lib/pkgconfig/libgda-ui-5.0.pc
                              usr/share/libgda-5.0/demo/"
+girepository_Gda5_0_SUMMARY="${SUMMARY} (GObject Introspection data)"
 girepository_Gda5_0_CONTENTS="usr/*/gir*/Gda-5.0.*"
+girepository_Gdaui5_0_SUMMARY="GNOME Data Access UI library (GObject Introspection data)"
 girepository_Gdaui5_0_CONTENTS="usr/*/gir*/Gdaui-5.0.*"
+vala_libgda5_0_SUMMARY="${SUMMARY} (Vala bindings)"
 vala_libgda5_0_CONTENTS="usr/share/vala*/"
 
 DIFF_EXCLUDES="libgda.h libgda.types"
 
 CYGCONF_ARGS="
 	--disable-binreloc
+	--enable-gda-gi
+	--enable-gdaui-gi
 	--disable-vala
 	--without-java
 	--with-bdb=/usr
