@@ -1,0 +1,310 @@
+--- origsrc/libgda-5.1.2/libgda/sqlite/sqlite-src/sqlite3.c	2013-01-18 14:04:34.000000000 -0600
++++ src/libgda-5.1.2/libgda/sqlite/sqlite-src/sqlite3.c	2013-08-08 12:05:29.091211100 -0500
+@@ -22689,6 +22689,9 @@ SQLITE_PRIVATE const char *sqlite3Opcode
+ # else
+ #  include <sys/file.h>
+ #  include <sys/param.h>
++#  if defined(__CYGWIN__)
++#   include <sys/statfs.h>
++#  endif
+ # endif
+ #endif /* SQLITE_ENABLE_LOCKING_STYLE */
+ 
+@@ -27365,6 +27367,38 @@ typedef const sqlite3_io_methods *(*find
+ ** sqlite3_vfs object.
+ */
+ 
++#if defined(__CYGWIN__)
++/*
++** Returns the Cygwin locking strategy to use for this program instance.
++**
++** Select POSIX fcntl() advisory locking by setting an environment
++** variable, CYGWIN_SQLITE_LOCKING=posix.  We check this only once,
++** then keep the same strategy until the program ends.  This mode is
++** best for programs ported to Cygwin which assume this lock style.
++**
++** If the variable is any other value or unset, we use BSD flock()
++** locking instead.  With Cygwin 1.7.20+, we also enable its mandatory
++** locking feature, which allows Cygwin SQLite to interoperate with
++** native Windows builds of SQLite, since those assume mandatory
++** Windows locks.
++*/
++typedef enum {
++	cls_UNKNOWN,
++	cls_POSIXAdvisory,
++	cls_BSDMandatory,
++} cygwinLockingStrategyT;
++static cygwinLockingStrategyT cygwinLockingStrategy() {
++	static cygwinLockingStrategyT rc = cls_UNKNOWN;
++	if (rc == cls_UNKNOWN) {
++	  const char* strategy = getenv("CYGWIN_SQLITE_LOCKING");
++	  rc = strategy && sqlite3_stricmp(strategy, "posix") == 0 ?
++            cls_POSIXAdvisory : cls_BSDMandatory;
++    }
++	assert(rc != cls_UNKNOWN);
++	return rc;
++}
++#endif
++
+ /*
+ ** Initialize the contents of the unixFile structure pointed to by pId.
+ */
+@@ -27419,6 +27453,16 @@ static int fillInUnixFile(
+   if( ctrlFlags & UNIXFILE_NOLOCK ){
+     pLockingStyle = &nolockIoMethods;
+   }else{
++#if __CYGWIN__ && SQLITE_ENABLE_LOCKING_STYLE
++	if (cygwinLockingStrategy() == cls_BSDMandatory) {
++	  /* We're on Cygwin with BSD locking enabled, and user hasn't
++	  ** set the environement variable that forces us to use POSIX
++	  ** locks, so override the VFS search logic; force BSD locking.
++	  */
++	  pLockingStyle = &flockIoMethods;
++	}
++	else
++#endif
+     pLockingStyle = (**(finder_type*)pVfs->pAppData)(zFilename, pNew);
+ #if SQLITE_ENABLE_LOCKING_STYLE
+     /* Cache zFilename in the locking context (AFP and dotlock override) for
+@@ -27941,6 +27985,43 @@ static int unixOpen(
+     p->pUnused->flags = flags;
+   }
+ 
++#ifdef __CYGWIN__
++  cygwinLockingStrategyT cls = cygwinLockingStrategy();
++  if (cls == cls_BSDMandatory) {
++	/* Enable Windows mandatory locking on this FD.  This allows us
++	** to build SQLite in "Unix mode" (SQLITE_OS_UNIX) but get the
++	** same locking semantics as you'd get via winLockFile() when
++	** building SQLite on Cygwin without setting SQLITE_OS_UNIX.
++	**
++	** Turn this off with CYGWIN_SQLITE_LOCKING=posix if you want
++	** POSIX advisory locking instead.  You want to do that when
++	** your program using Cygwin SQLite only needs to cooperate for
++	** access to a DB file with other programs also built against
++	** Cygwin.  In that case, your programs are probably coming
++	** from a POSIXy system, so they will expect advisory locking
++	** semantics; Windows locking may confuse them.
++	**
++	** We default to Windows locking semantics so we interoperate
++	** with native Windows programs that also use SQLite on the DB
++	** file we have open.  e.g. Attempting to use Cygwin svn on a
++	** directory visible in Windows explorer with the Tortoise SVN
++	** extension installed.  When (!) both try to open the DB, the
++	** Cygwin program is likely to get a file I/O error because an
++	** advisory lock fails on a file open with a mandatory lock.
++	**
++	** Don't be confused by Cygwin's design choice to enable this
++	** mode for BSD locks via an fcntl() call.  That POSIX locks
++	** are also implemented in terms of fcntl() is irrelevant.
++	*/
++	if ((fcntl(fd, F_LCK_MANDATORY, 1) != 0) && (errno != EINVAL)) {
++		// The API exists but it refused to enable mandatory locking!
++		((unixFile*)pFile)->lastErrno = errno;
++		robust_close(p, fd, __LINE__);
++		return SQLITE_IOERR_ACCESS;
++	}
++  }
++#endif
++
+   if( isDelete ){
+ #if OS_VXWORKS
+     zPath = zName;
+@@ -27957,7 +28038,9 @@ static int unixOpen(
+   noLock = eType!=SQLITE_OPEN_MAIN_DB;
+ 
+   
+-#if defined(__APPLE__) || SQLITE_ENABLE_LOCKING_STYLE
++#if (defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE)
++  /* Don't do this for Cygwin because even though the DB could be on a FAT
++     filesystem, its struct statfs doesn't have this field to query. */
+   if( fstatfs(fd, &fsInfo) == -1 ){
+     ((unixFile*)pFile)->lastErrno = errno;
+     robust_close(p, fd, __LINE__);
+@@ -27975,7 +28058,8 @@ static int unixOpen(
+   if( syncDir )                 ctrlFlags |= UNIXFILE_DIRSYNC;
+   if( flags & SQLITE_OPEN_URI ) ctrlFlags |= UNIXFILE_URI;
+ 
+-#if SQLITE_ENABLE_LOCKING_STYLE
++#if SQLITE_ENABLE_LOCKING_STYLE && !defined(__CYGWIN__)
++	/* Cygwin never does proxy locking; it may be Mac OS X only? */
+ #if SQLITE_PREFER_PROXY_LOCKING
+   isAutoProxy = 1;
+ #endif
+@@ -33870,7 +33954,7 @@ static int winFullPathname(
+     */
+     char zOut[MAX_PATH+1];
+     memset(zOut, 0, MAX_PATH+1);
+-    cygwin_conv_to_win32_path(zRelative, zOut); /* POSIX to Win32 */
++    cygwin_conv_path(CCP_POSIX_TO_WIN_A|CCP_RELATIVE, zRelative, zOut, MAX_PATH+1);
+     sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s\\%s",
+                      sqlite3_data_directory, zOut);
+   }else{
+@@ -33879,7 +33963,7 @@ static int winFullPathname(
+     **       for the buffer passed to cygwin_conv_to_full_win32_path
+     **       is MAX_PATH.
+     */
+-    cygwin_conv_to_full_win32_path(zRelative, zFull);
++    cygwin_conv_path(CCP_POSIX_TO_WIN_A, zRelative, zFull, nFull);
+   }
+   return SQLITE_OK;
+ #endif
+--- origsrc/libgda-5.1.2/providers/sqlcipher/sqlite3.c	2013-03-16 10:44:03.000000000 -0500
++++ src/libgda-5.1.2/providers/sqlcipher/sqlite3.c	2013-08-08 12:05:14.853396700 -0500
+@@ -9381,6 +9381,7 @@ SQLITE_PRIVATE void sqlite3PCacheSetDefa
+ #endif
+ 
+ #if SQLITE_OS_WIN
++# define WIN32_LEAN_AND_MEAN
+ # include <windows.h>
+ #endif
+ 
+@@ -25003,6 +25004,9 @@ SQLITE_PRIVATE const char *sqlite3Opcode
+ # else
+ #  include <sys/file.h>
+ #  include <sys/param.h>
++#  if defined(__CYGWIN__)
++#   include <sys/statfs.h>
++#  endif
+ # endif
+ #endif /* SQLITE_ENABLE_LOCKING_STYLE */
+ 
+@@ -29679,6 +29682,38 @@ typedef const sqlite3_io_methods *(*find
+ ** sqlite3_vfs object.
+ */
+ 
++#if defined(__CYGWIN__)
++/*
++** Returns the Cygwin locking strategy to use for this program instance.
++**
++** Select POSIX fcntl() advisory locking by setting an environment
++** variable, CYGWIN_SQLITE_LOCKING=posix.  We check this only once,
++** then keep the same strategy until the program ends.  This mode is
++** best for programs ported to Cygwin which assume this lock style.
++**
++** If the variable is any other value or unset, we use BSD flock()
++** locking instead.  With Cygwin 1.7.20+, we also enable its mandatory
++** locking feature, which allows Cygwin SQLite to interoperate with
++** native Windows builds of SQLite, since those assume mandatory
++** Windows locks.
++*/
++typedef enum {
++	cls_UNKNOWN,
++	cls_POSIXAdvisory,
++	cls_BSDMandatory,
++} cygwinLockingStrategyT;
++static cygwinLockingStrategyT cygwinLockingStrategy() {
++	static cygwinLockingStrategyT rc = cls_UNKNOWN;
++	if (rc == cls_UNKNOWN) {
++	  const char* strategy = getenv("CYGWIN_SQLITE_LOCKING");
++	  rc = strategy && sqlite3_stricmp(strategy, "posix") == 0 ?
++            cls_POSIXAdvisory : cls_BSDMandatory;
++    }
++	assert(rc != cls_UNKNOWN);
++	return rc;
++}
++#endif
++
+ /*
+ ** Initialize the contents of the unixFile structure pointed to by pId.
+ */
+@@ -29733,6 +29768,16 @@ static int fillInUnixFile(
+   if( ctrlFlags & UNIXFILE_NOLOCK ){
+     pLockingStyle = &nolockIoMethods;
+   }else{
++#if __CYGWIN__ && SQLITE_ENABLE_LOCKING_STYLE
++	if (cygwinLockingStrategy() == cls_BSDMandatory) {
++	  /* We're on Cygwin with BSD locking enabled, and user hasn't
++	  ** set the environement variable that forces us to use POSIX
++	  ** locks, so override the VFS search logic; force BSD locking.
++	  */
++	  pLockingStyle = &flockIoMethods;
++	}
++	else
++#endif
+     pLockingStyle = (**(finder_type*)pVfs->pAppData)(zFilename, pNew);
+ #if SQLITE_ENABLE_LOCKING_STYLE
+     /* Cache zFilename in the locking context (AFP and dotlock override) for
+@@ -30255,6 +30300,43 @@ static int unixOpen(
+     p->pUnused->flags = flags;
+   }
+ 
++#ifdef __CYGWIN__
++  cygwinLockingStrategyT cls = cygwinLockingStrategy();
++  if (cls == cls_BSDMandatory) {
++	/* Enable Windows mandatory locking on this FD.  This allows us
++	** to build SQLite in "Unix mode" (SQLITE_OS_UNIX) but get the
++	** same locking semantics as you'd get via winLockFile() when
++	** building SQLite on Cygwin without setting SQLITE_OS_UNIX.
++	**
++	** Turn this off with CYGWIN_SQLITE_LOCKING=posix if you want
++	** POSIX advisory locking instead.  You want to do that when
++	** your program using Cygwin SQLite only needs to cooperate for
++	** access to a DB file with other programs also built against
++	** Cygwin.  In that case, your programs are probably coming
++	** from a POSIXy system, so they will expect advisory locking
++	** semantics; Windows locking may confuse them.
++	**
++	** We default to Windows locking semantics so we interoperate
++	** with native Windows programs that also use SQLite on the DB
++	** file we have open.  e.g. Attempting to use Cygwin svn on a
++	** directory visible in Windows explorer with the Tortoise SVN
++	** extension installed.  When (!) both try to open the DB, the
++	** Cygwin program is likely to get a file I/O error because an
++	** advisory lock fails on a file open with a mandatory lock.
++	**
++	** Don't be confused by Cygwin's design choice to enable this
++	** mode for BSD locks via an fcntl() call.  That POSIX locks
++	** are also implemented in terms of fcntl() is irrelevant.
++	*/
++	if ((fcntl(fd, F_LCK_MANDATORY, 1) != 0) && (errno != EINVAL)) {
++		// The API exists but it refused to enable mandatory locking!
++		((unixFile*)pFile)->lastErrno = errno;
++		robust_close(p, fd, __LINE__);
++		return SQLITE_IOERR_ACCESS;
++	}
++  }
++#endif
++
+   if( isDelete ){
+ #if OS_VXWORKS
+     zPath = zName;
+@@ -30271,7 +30353,9 @@ static int unixOpen(
+   noLock = eType!=SQLITE_OPEN_MAIN_DB;
+ 
+   
+-#if defined(__APPLE__) || SQLITE_ENABLE_LOCKING_STYLE
++#if (defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE)
++  /* Don't do this for Cygwin because even though the DB could be on a FAT
++     filesystem, its struct statfs doesn't have this field to query. */
+   if( fstatfs(fd, &fsInfo) == -1 ){
+     ((unixFile*)pFile)->lastErrno = errno;
+     robust_close(p, fd, __LINE__);
+@@ -30289,7 +30373,8 @@ static int unixOpen(
+   if( syncDir )                 ctrlFlags |= UNIXFILE_DIRSYNC;
+   if( flags & SQLITE_OPEN_URI ) ctrlFlags |= UNIXFILE_URI;
+ 
+-#if SQLITE_ENABLE_LOCKING_STYLE
++#if SQLITE_ENABLE_LOCKING_STYLE && !defined(__CYGWIN__)
++	/* Cygwin never does proxy locking; it may be Mac OS X only? */
+ #if SQLITE_PREFER_PROXY_LOCKING
+   isAutoProxy = 1;
+ #endif
+@@ -36184,7 +36269,7 @@ static int winFullPathname(
+     */
+     char zOut[MAX_PATH+1];
+     memset(zOut, 0, MAX_PATH+1);
+-    cygwin_conv_to_win32_path(zRelative, zOut); /* POSIX to Win32 */
++    cygwin_conv_path(CCP_POSIX_TO_WIN_A|CCP_RELATIVE, zRelative, zOut, MAX_PATH+1);
+     sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s\\%s",
+                      sqlite3_data_directory, zOut);
+   }else{
+@@ -36193,7 +36278,7 @@ static int winFullPathname(
+     **       for the buffer passed to cygwin_conv_to_full_win32_path
+     **       is MAX_PATH.
+     */
+-    cygwin_conv_to_full_win32_path(zRelative, zFull);
++    cygwin_conv_path(CCP_POSIX_TO_WIN_A, zRelative, zFull, nFull);
+   }
+   return SQLITE_OK;
+ #endif

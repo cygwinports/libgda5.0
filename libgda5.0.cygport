@@ -2,9 +2,9 @@ ORIG_PN="libgda"
 inherit gnome2 python
 
 NAME="libgda5.0"
-VERSION=5.1.1
+VERSION=5.1.2
 RELEASE=1
-CATEGORY="Database GNOME"
+CATEGORY="Libs"
 SUMMARY="GNOME Data Access libraries"
 DESCRIPTION="GNU Data Access (GDA) is an attempt to provide uniform access to
 different kinds of data sources (databases, information servers, mail spools,
@@ -15,12 +15,14 @@ through them."
 HOMEPAGE="http://www.gnome-db.org/"
 
 PATCH_URI="
-	http://pkgs.fedoraproject.org/cgit/libgda.git/plain/libgda-5.1.1-introspection.patch?h=f18&id=11e640c
+	https://git.gnome.org/browse/libgda/patch/tools/browser/canvas/browser-canvas.c?id=a09196d
 	4.2.2-cygwin.patch
+	5.1.2-sqlite3-locking.patch
 "
 
 PKG_NAMES="libgda5.0_4 libgda5.0-devel libgda-ui5.0_4 libgda-ui5.0-devel
            gda-browser5.0 girepository-Gda5.0 girepository-Gdaui5.0" # vala-libgda5.0"
+gda_browser5_0_CONTENTS="Database"
 gda_browser5_0_SUMMARY="GNOME Data Access browser"
 gda_browser5_0_CONTENTS="usr/bin/gda-browser* usr/share/applications/gda-browser*
                          usr/share/gnome/help/ usr/share/gtk-doc/html/gda-browser/
