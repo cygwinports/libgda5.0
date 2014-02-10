@@ -3,7 +3,7 @@ inherit gnome2 python
 
 NAME="libgda5.0"
 VERSION=5.1.2
-RELEASE=1
+RELEASE=2
 CATEGORY="Libs"
 SUMMARY="GNOME Data Access libraries"
 DESCRIPTION="GNU Data Access (GDA) is an attempt to provide uniform access to
@@ -20,7 +20,7 @@ PATCH_URI="
 	5.1.2-sqlite3-locking.patch
 "
 
-PKG_NAMES="libgda5.0_4 libgda5.0-devel libgda-ui5.0_4 libgda-ui5.0-devel
+PKG_NAMES="libgda5.0_4 libgda5.0-devel libgda5.0-doc libgda-ui5.0_4 libgda-ui5.0-devel
            gda-browser5.0 girepository-Gda5.0 girepository-Gdaui5.0" # vala-libgda5.0"
 gda_browser5_0_CONTENTS="Database"
 gda_browser5_0_SUMMARY="GNOME Data Access browser"
@@ -38,8 +38,10 @@ libgda5_0_4_CONTENTS="--exclude=*gda-ui* --exclude=demo --exclude=icons
                       usr/share/locale/ usr/share/man/"
 libgda5_0_devel_SUMMARY="${SUMMARY} (development files)"
 libgda5_0_devel_CONTENTS="--exclude=*gda-ui* usr/include/ usr/lib/libgda*-5.0.*
-                        usr/lib/pkgconfig/
-                        usr/share/gtk-doc/html/libgda-5.0/"
+                        usr/lib/pkgconfig/"
+libgda5_0_doc_CATEGORY="Doc"
+libgda5_0_doc_SUMMARY="${SUMMARY} (API documentation)"
+libgda5_0_doc_CONTENTS="usr/share/gtk-doc/html/libgda-5.0/"
 libgda_ui5_0_4_SUMMARY="GNOME Data Access UI library (runtime)"
 libgda_ui5_0_4_CONTENTS="--exclude=gda-browser* usr/bin/cyggda-ui-5.0-4.dll
                          usr/bin/gda-control-center-*
@@ -59,8 +61,9 @@ girepository_Gdaui5_0_CONTENTS="usr/*/gir*/Gdaui-5.0.*"
 vala_libgda5_0_SUMMARY="${SUMMARY} (Vala bindings)"
 vala_libgda5_0_CONTENTS="usr/share/vala*/"
 
-DIFF_EXCLUDES="libgda.h libgda.types"
+DIFF_EXCLUDES="libgda.h libgda.types *.pc"
 
+CPPFLAGS+=" -DGRAPHVIZ_NEW_API"
 CYGCONF_ARGS="
 	--disable-binreloc
 	--enable-gda-gi
