@@ -2,8 +2,8 @@ ORIG_PN="libgda"
 inherit gnome2 python
 
 NAME="libgda5.0"
-VERSION=5.1.2
-RELEASE=2
+VERSION=5.2.2
+RELEASE=1
 CATEGORY="Libs"
 SUMMARY="GNOME Data Access libraries"
 DESCRIPTION="GNU Data Access (GDA) is an attempt to provide uniform access to
@@ -15,17 +15,19 @@ through them."
 HOMEPAGE="http://www.gnome-db.org/"
 
 PATCH_URI="
-	https://git.gnome.org/browse/libgda/patch/tools/browser/canvas/browser-canvas.c?id=a09196d
-	4.2.2-cygwin.patch
-	5.1.2-sqlite3-locking.patch
+	5.2.2-cygwin-configure.patch
+	5.2.2-cygwin-bdb.patch
+	5.2.2-cygwin-glade.patch
+	5.2.2-vala026.patch
 "
 
-PKG_NAMES="libgda5.0_4 libgda5.0-devel libgda5.0-doc libgda-ui5.0_4 libgda-ui5.0-devel
-           gda-browser5.0 girepository-Gda5.0 girepository-Gdaui5.0" # vala-libgda5.0"
+PKG_NAMES="libgda5.0_4 libgda5.0-devel libgda5.0-doc
+	libgda-ui5.0_4 libgda-ui5.0-devel glade-gdaui
+	gda-browser5.0 girepository-Gda5.0 girepository-Gdaui5.0 vala-libgda5.0"
 gda_browser5_0_CONTENTS="Database"
 gda_browser5_0_SUMMARY="GNOME Data Access browser"
 gda_browser5_0_CONTENTS="usr/bin/gda-browser* usr/share/applications/gda-browser*
-                         usr/share/gnome/help/ usr/share/gtk-doc/html/gda-browser/
+                         usr/share/help/ usr/share/gtk-doc/html/gda-browser/
                          usr/share/libgda-5.0/pixmaps/gda-browser*
                          usr/share/pixmaps/gda-browser-*"
 libgda5_0_4_SUMMARY="${SUMMARY} (runtime libs)"
@@ -60,15 +62,16 @@ girepository_Gdaui5_0_SUMMARY="GNOME Data Access UI library (GObject Introspecti
 girepository_Gdaui5_0_CONTENTS="usr/*/gir*/Gdaui-5.0.*"
 vala_libgda5_0_SUMMARY="${SUMMARY} (Vala bindings)"
 vala_libgda5_0_CONTENTS="usr/share/vala*/"
+glade_gdaui_CONTENTS="usr/share/glade/"
 
 DIFF_EXCLUDES="libgda.h libgda.types *.pc"
 
-CPPFLAGS+=" -DGRAPHVIZ_NEW_API"
+CPPFLAGS+=" -DSQLITE_OS_UNIX=1"
 CYGCONF_ARGS="
 	--disable-binreloc
 	--enable-gda-gi
 	--enable-gdaui-gi
-	--disable-vala
+	--enable-vala
 	--without-java
 	--with-bdb=/usr
 	--with-ldap=/usr

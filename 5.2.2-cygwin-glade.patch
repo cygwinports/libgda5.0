@@ -1,0 +1,8 @@
+--- origsrc/libgda-5.2.2/libgda-ui/glade/gdaui-catalog.xml	2013-10-19 07:35:28.000000000 -0500
++++ src/libgda-5.2.2/libgda-ui/glade/gdaui-catalog.xml	2015-01-08 12:15:17.739778100 -0600
+@@ -1,4 +1,4 @@
+-<glade-catalog name="gdaui" library="libgda-ui-5.0.so" depends="gtk+">
++<glade-catalog name="gdaui" library="gda-ui-5.0-4" depends="gtk+">
+   <init-function>gdaui_init</init-function>
+   <glade-widget-classes>
+     <glade-widget-class name="GdauiGrid" generic-name="gdauigrid" title="Database Grid"/>
