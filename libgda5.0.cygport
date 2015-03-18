@@ -3,7 +3,7 @@ inherit gnome2 python
 
 NAME="libgda5.0"
 VERSION=5.2.2
-RELEASE=1
+RELEASE=2
 CATEGORY="Libs"
 SUMMARY="GNOME Data Access libraries"
 DESCRIPTION="GNU Data Access (GDA) is an attempt to provide uniform access to
