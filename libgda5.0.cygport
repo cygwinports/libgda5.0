@@ -2,8 +2,8 @@ ORIG_PN="libgda"
 inherit gnome2 python
 
 NAME="libgda5.0"
-VERSION=5.2.2
-RELEASE=2
+VERSION=5.2.4
+RELEASE=1
 CATEGORY="Libs"
 SUMMARY="GNOME Data Access libraries"
 DESCRIPTION="GNU Data Access (GDA) is an attempt to provide uniform access to
@@ -18,7 +18,7 @@ PATCH_URI="
 	5.2.2-cygwin-configure.patch
 	5.2.2-cygwin-bdb.patch
 	5.2.2-cygwin-glade.patch
-	5.2.2-vala026.patch
+	5.2.4-valagen.patch
 "
 
 PKG_NAMES="libgda5.0_4 libgda5.0-devel libgda5.0-doc
@@ -26,10 +26,15 @@ PKG_NAMES="libgda5.0_4 libgda5.0-devel libgda5.0-doc
 	gda-browser5.0 girepository-Gda5.0 girepository-Gdaui5.0 vala-libgda5.0"
 gda_browser5_0_CONTENTS="Database"
 gda_browser5_0_SUMMARY="GNOME Data Access browser"
-gda_browser5_0_CONTENTS="usr/bin/gda-browser* usr/share/applications/gda-browser*
-                         usr/share/help/ usr/share/gtk-doc/html/gda-browser/
-                         usr/share/libgda-5.0/pixmaps/gda-browser*
-                         usr/share/pixmaps/gda-browser-*"
+gda_browser5_0_CONTENTS="
+	usr/bin/gda-browser*
+	usr/share/appdata/gda-browser*
+	usr/share/applications/gda-browser*
+	usr/share/help/
+	usr/share/gtk-doc/html/gda-browser/
+	usr/share/libgda-5.0/pixmaps/gda-browser*
+	usr/share/pixmaps/gda-browser-*
+"
 libgda5_0_4_SUMMARY="${SUMMARY} (runtime libs)"
 libgda5_0_4_CONTENTS="--exclude=*gda-ui* --exclude=demo --exclude=icons
                       --exclude=pixmaps --exclude=ui --exclude=*.glade
