@@ -67,6 +67,8 @@ girepository_Gdaui5_0_SUMMARY="GNOME Data Access UI library (GObject Introspecti
 girepository_Gdaui5_0_CONTENTS="usr/*/gir*/Gdaui-5.0.*"
 vala_libgda5_0_SUMMARY="${SUMMARY} (Vala bindings)"
 vala_libgda5_0_CONTENTS="usr/share/vala*/"
+glade_gdaui_CATEGORY="Devel"
+glade_gdaui_REQUIRES="libgda-ui5.0_4"
 glade_gdaui_CONTENTS="usr/share/glade/"
 
 DIFF_EXCLUDES="libgda.h libgda.types *.pc"
