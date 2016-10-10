@@ -3,7 +3,7 @@ inherit gnome2 python
 
 NAME="libgda5.0"
 VERSION=5.2.4
-RELEASE=1
+RELEASE=2
 CATEGORY="Libs"
 SUMMARY="GNOME Data Access libraries"
 DESCRIPTION="GNU Data Access (GDA) is an attempt to provide uniform access to
@@ -36,6 +36,7 @@ gda_browser5_0_CONTENTS="
 	usr/share/pixmaps/gda-browser-*
 "
 libgda5_0_4_SUMMARY="${SUMMARY} (runtime libs)"
+libgda5_0_4_REQUIRES="libdb5.3"
 libgda5_0_4_CONTENTS="--exclude=*gda-ui* --exclude=demo --exclude=icons
                       --exclude=pixmaps --exclude=ui --exclude=*.glade
                       etc/ usr/bin/*-5.0-4.dll

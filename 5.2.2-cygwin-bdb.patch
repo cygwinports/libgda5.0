@@ -19,7 +19,7 @@
 +		        db_libfilename="cygdb-$version.dll"
 +        	        db_lib="-ldb-$version"
 +		        db_libfile="$d/lib/libdb-$version.dll.a"
-+        	        try_headers="db$version/db.h db$sversion/db.h"
++        	        try_headers="db.h"
 +		    elif test $platform_win32 = yes
  		    then
  		        db_libfilename="libdb$sversion$bdb_libext"
